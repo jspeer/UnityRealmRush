@@ -6,25 +6,27 @@ using TMPro;
 [ExecuteAlways, RequireComponent(typeof(TextMeshPro))]
 public class CoordinateLabeler : MonoBehaviour
 {
-    [SerializeField] Color defaultColor = Color.white;
-    [SerializeField] Color blockedColor = Color.grey;
+    [SerializeField] Color defaultColor  = Color.white;
+    [SerializeField] Color blockedColor  = Color.grey;
+    [SerializeField] Color exploredColor = Color.yellow;
+    [SerializeField] Color pathColor     = new Color(1f, 0.5f, 0f); // Orange
 
     TextMeshPro label;
     Vector2Int coordinates = new Vector2Int();
 
-    Waypoint waypoint;
+    GridManager gridManager;
 
     void Awake()
     {
         label = GetComponent<TextMeshPro>();
         label.enabled = false;
-        waypoint = GetComponentInParent<Waypoint>();
-//        DisplayCoordinates();
+        gridManager = FindObjectOfType<GridManager>();
+        DisplayCoordinates();
     }
 
     void Update()
     {
-/*        // Limit to edit mode only
+        // Limit to edit mode only
         if(!Application.isPlaying) {
             DisplayCoordinates();
             UpdateObjectName();
@@ -33,7 +35,7 @@ public class CoordinateLabeler : MonoBehaviour
 
         SetCoordinatesLabelColor();
         ToggleLabels();
-*/    }
+    }
 
     void ToggleLabels()
     {
@@ -42,10 +44,12 @@ public class CoordinateLabeler : MonoBehaviour
         }
     }
 
-/*    void DisplayCoordinates()
+    void DisplayCoordinates()
     {
-        coordinates.x = Mathf.RoundToInt(transform.parent.position.x / UnityEditor.EditorSnapSettings.move.x);
-        coordinates.y = Mathf.RoundToInt(transform.parent.position.z / UnityEditor.EditorSnapSettings.move.z);
+        if (gridManager == null) return;
+
+        coordinates.x = Mathf.RoundToInt(transform.parent.position.x / gridManager.UnityGridSize);
+        coordinates.y = Mathf.RoundToInt(transform.parent.position.z / gridManager.UnityGridSize);
         label.text = $"{coordinates.x:D2},{coordinates.y:D2}";
     }
 
@@ -53,9 +57,24 @@ public class CoordinateLabeler : MonoBehaviour
     {
         //transform.parent.name = coordinates.ToString("D2");
     }
-*/
+
     void SetCoordinatesLabelColor()
     {
-        label.color = waypoint.IsPlaceable ? defaultColor : blockedColor;
+        // No grid manager? bail
+        if (gridManager == null) return;
+        // Empty node? bail
+        Node node = gridManager.GetNode(coordinates);
+        if (node == null) return;
+
+        // Set color based on condition
+        if (!node.isWalkable) {
+            label.color = blockedColor;
+        } else if (node.isPath) {
+            label.color = pathColor;
+        } else if (node.isExplored) {
+            label.color = exploredColor;
+        } else {
+            label.color = defaultColor;
+        }
     }
 }
